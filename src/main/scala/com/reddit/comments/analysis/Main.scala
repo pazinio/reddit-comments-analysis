@@ -17,14 +17,14 @@ object Main {
     println("args:" + args.mkString("#"))
 
     // params
-    val master = "local[*]"
-    val path = "adl://mydatalakestore.azuredatalakestore.net/reddit/comments/*"
+//    val master = "local[*]"
+    val path = "adl://mydatalakestore77.azuredatalakestore.net/reddit/comments/*"
     val term = args.head.toLowerCase // "love".toLowerCase
 
     val spark = SparkSession
       .builder
       .appName("reddit-comments-analysis")
-      .config("spark.master", master)
+//      .config("spark.master", master)
       .getOrCreate()
 
 
@@ -37,13 +37,13 @@ object Main {
     val df = spark.read
       .option("header", "true")
       .json(path).toDF
-    df.show(2)
+//    df.show(2)
 
     println("convert dataframe to specific relevant data set columns")
     val ds =
       df.select("author", "body", "subreddit")
       .as[AuthorBodySubReddit]
-    ds.show(10)
+//    ds.show(10)
 
   /**
     * for a given term filter relevant comments
@@ -57,8 +57,6 @@ object Main {
     .limit(10)
 
     println(s"Given a single-word term: ||'${term}'||, determine what sub-reddit it appears in and how many times (Case-insensitive):")
-    result.show()
-
     result.coalesce(1).write.csv(s"adl://mydatalakestore77.azuredatalakestore.net/output/${term}.csv")
   }
 }
