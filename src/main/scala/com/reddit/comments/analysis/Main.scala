@@ -54,6 +54,7 @@ object Main {
     .reduceByKey(_+_).toDS
     .map(x => SubredditTotal(subreddit = x._1, total = x._2))
     .orderBy($"total".desc)
+    .limit(10)
 
     println(s"Given a single-word term: ||'${term}'||, determine what sub-reddit it appears in and how many times (Case-insensitive):")
     result.show()
