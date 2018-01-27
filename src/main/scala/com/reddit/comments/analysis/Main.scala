@@ -18,7 +18,7 @@ object Main {
 
     // params
     val master = "local[*]"
-    val path = "adl://mydatalakestore77.azuredatalakestore.net/reddit/comments/*" 
+    val path = "adl://mydatalakestore.azuredatalakestore.net/reddit/comments/*"
     val term = args.head.toLowerCase // "love".toLowerCase
 
     val spark = SparkSession
