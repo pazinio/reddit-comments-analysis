@@ -18,7 +18,7 @@ object Main {
 
     // params
     val master = "local[*]"
-    val path = "*.json" //org.apache.spark.SparkFiles.get("input.json")
+    val path = "adl://mydatalakestore77.azuredatalakestore.net/reddit/comments/*" 
     val term = args.head.toLowerCase // "love".toLowerCase
 
     val spark = SparkSession
@@ -59,6 +59,6 @@ object Main {
     println(s"Given a single-word term: ||'${term}'||, determine what sub-reddit it appears in and how many times (Case-insensitive):")
     result.show()
 
-    result.coalesce(1).write.csv(s"${term}.csv")
+    result.coalesce(1).write.csv(s"adl://mydatalakestore77.azuredatalakestore.net/output/${term}.csv")
   }
 }
