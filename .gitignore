@@ -4,3 +4,5 @@ spark-warehouse
 target
 sample_data.json
 sample_data2.json
+*.csv/*
+*.csv
