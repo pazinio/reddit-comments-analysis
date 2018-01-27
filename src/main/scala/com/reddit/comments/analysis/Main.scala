@@ -55,7 +55,9 @@ object Main {
     .map(x => SubredditTotal(subreddit = x._1, total = x._2))
     .orderBy($"total".desc)
 
-    println(s"Given a single-word term: ${term}, determine what sub-reddit it appears in and how many times (Case-insensitive):")
+    println(s"Given a single-word term: ||'${term}'||, determine what sub-reddit it appears in and how many times (Case-insensitive):")
     result.show()
+
+    result.coalesce(1).write.csv(s"${term}.csv")
   }
 }
