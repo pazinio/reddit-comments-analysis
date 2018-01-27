@@ -19,7 +19,7 @@ object Main {
     // params
     val master = "local[*]"
     val path = "*.json" //org.apache.spark.SparkFiles.get("input.json")
-    val term = args.head // "love".toLowerCase
+    val term = args.head.toLowerCase // "love".toLowerCase
 
     val spark = SparkSession
       .builder
