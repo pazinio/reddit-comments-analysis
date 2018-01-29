@@ -14,9 +14,6 @@ object Main {
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
 
-//    println("args length:" + args.length)
-//    println("args:" + args.mkString("#"))
-
     // params
 //    val master = "local[*]"
     if (args.size < 1) {
@@ -27,7 +24,7 @@ object Main {
     val innerPath = args(0)
     val terms = args.tail
 
-    val path ="*.json"//s"adl://mydatalakestore77.azuredatalakestore.net/reddit/${innerPath}/*"
+    val path =s"adl://mydatalakestore77.azuredatalakestore.net/reddit/${innerPath}/*" //"*.json"
     println("args:" + args.mkString(","))
     println("path:" + path)
     println("terms:" + terms.mkString(","))
@@ -35,7 +32,6 @@ object Main {
     val spark = SparkSession
       .builder
       .appName("reddit-comments-analysis")
-      .config("spark.master", "local[*]")
       .getOrCreate()
 
 
@@ -74,7 +70,7 @@ object Main {
         .limit(10)
 
       println(s"Given a single-word term: ||'${term}'||, determine what sub-reddit it appears in and how many times (Case-insensitive):")
-      val outputPath = term//s"adl://mydatalakestore77.azuredatalakestore.net/output/${term}"
+      val outputPath = s"adl://mydatalakestore77.azuredatalakestore.net/output/${term}" //term
       println("outputPath: " + outputPath)
       result.coalesce(1).write.mode("overwrite").csv(outputPath)
     }}
