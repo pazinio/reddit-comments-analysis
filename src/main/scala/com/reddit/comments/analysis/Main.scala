@@ -1,5 +1,6 @@
 package com.reddit.comments.analysis
 
+import org.apache.hadoop.hdfs.server.namenode.SafeMode
 import org.apache.log4j._
 import org.apache.spark.sql.SparkSession
 
@@ -13,18 +14,28 @@ object Main {
     // Set the log level to only print errors
     Logger.getLogger("org").setLevel(Level.ERROR)
 
-    println("args length:" + args.length)
-    println("args:" + args.mkString("#"))
+//    println("args length:" + args.length)
+//    println("args:" + args.mkString("#"))
 
     // params
 //    val master = "local[*]"
-    val path = "adl://mydatalakestore77.azuredatalakestore.net/reddit/comments/*"
-    val term = args.head.toLowerCase // "love".toLowerCase
+    if (args.size < 1) {
+      println("Please provide requested params")
+      return
+    }
+
+    val innerPath = args(0)
+    val terms = args.tail
+
+    val path =s"adl://mydatalakestore77.azuredatalakestore.net/reddit/${innerPath}/*"
+    println("args:" + args.mkString(","))
+    println("path:" + path)
+    println("terms:" + terms.mkString(","))
 
     val spark = SparkSession
       .builder
       .appName("reddit-comments-analysis")
-//      .config("spark.master", master)
+      .config("spark.master", "local[*]")
       .getOrCreate()
 
 
@@ -33,30 +44,45 @@ object Main {
     /**
       * reading reddit comments data
       */
-    println("read data as data frame")
-    val df = spark.read
-      .option("header", "true")
-      .json(path).toDF
-//    df.show(2)
+    println("Read data as data frame ...")
+    val df = spark.time {
+      spark.read
+        .option("header", "true")
+        .json(path).toDF
+    }
 
-    println("convert dataframe to specific relevant data set columns")
-    val ds =
-      df.select("author", "body", "subreddit")
-      .as[AuthorBodySubReddit]
-//    ds.show(10)
+    println("Convert dataframe to specific relevant data set columns ...")
+    val ds = spark.time {
+        df.select("author", "body", "subreddit")
+          .as[AuthorBodySubReddit]
+    }
 
-  /**
-    * for a given term filter relevant comments
-    */
-  val result = ds
-    .filter(d => d.body.contains(term))
-    .map(d => (d.subreddit, 1)).rdd
-    .reduceByKey(_+_).toDS
-    .map(x => SubredditTotal(subreddit = x._1, total = x._2))
-    .orderBy($"total".desc)
-    .limit(10)
+    val relevantDS = spark.time { ds.filter(d => {
+      for (t <- terms) {
+        if (d.body.contains(t)) return true
+      }
+      false
+    })}
 
-    println(s"Given a single-word term: ||'${term}'||, determine what sub-reddit it appears in and how many times (Case-insensitive):")
-    result.coalesce(1).write.csv(s"adl://mydatalakestore77.azuredatalakestore.net/output/${term}.csv")
+    /**
+     * for a given term filter relevant comments
+     */
+    terms.foreach(term => {
+      val result = relevantDS
+        .filter(d => d.body.contains(term))
+        .map(d => (d.subreddit, 1)).rdd
+        .reduceByKey(_ + _).toDS
+        .map(x => SubredditTotal(subreddit = x._1, total = x._2))
+        .orderBy($"total".desc)
+        .limit(10)
+
+      println(s"Given a single-word term: ||'${term}'||, determine what sub-reddit it appears in and how many times (Case-insensitive):")
+      val outputPath = s"adl://mydatalakestore77.azuredatalakestore.net/output/${term}"
+      println("outputPath: " + outputPath)
+      result.coalesce(1).write.mode("overwrite").csv(outputPath)
+    }
+  )
+
+
   }
 }
