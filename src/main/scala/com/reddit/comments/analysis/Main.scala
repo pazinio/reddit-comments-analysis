@@ -27,7 +27,7 @@ object Main {
     val innerPath = args(0)
     val terms = args.tail
 
-    val path =s"adl://mydatalakestore77.azuredatalakestore.net/reddit/${innerPath}/*"
+    val path ="*.json"//s"adl://mydatalakestore77.azuredatalakestore.net/reddit/${innerPath}/*"
     println("args:" + args.mkString(","))
     println("path:" + path)
     println("terms:" + terms.mkString(","))
@@ -57,18 +57,15 @@ object Main {
           .as[AuthorBodySubReddit]
     }
 
-    val relevantDS = spark.time { ds.filter(d => {
-      for (t <- terms) {
-        if (d.body.contains(t)) return true
-      }
-      false
-    })}
+    val relevantDS = spark.time {
+      ds.filter(d => terms.exists(d.body.contains(_)))
+    }
 
     /**
      * for a given term filter relevant comments
      */
     terms.foreach(term => {
-      val result = relevantDS
+      spark.time { val result = relevantDS
         .filter(d => d.body.contains(term))
         .map(d => (d.subreddit, 1)).rdd
         .reduceByKey(_ + _).toDS
@@ -77,10 +74,10 @@ object Main {
         .limit(10)
 
       println(s"Given a single-word term: ||'${term}'||, determine what sub-reddit it appears in and how many times (Case-insensitive):")
-      val outputPath = s"adl://mydatalakestore77.azuredatalakestore.net/output/${term}"
+      val outputPath = term//s"adl://mydatalakestore77.azuredatalakestore.net/output/${term}"
       println("outputPath: " + outputPath)
       result.coalesce(1).write.mode("overwrite").csv(outputPath)
-    }
+    }}
   )
 
 
