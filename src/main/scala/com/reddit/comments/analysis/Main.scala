@@ -70,14 +70,15 @@ object Main {
         * for a given term filter relevant comments
         */
       terms.foreach(term => {
+        val lowerCaseTerm = term.toLowerCase
         spark.time {
           val result = relevantDS
             .flatMap(d => {
-              val arr = d.body.split(" ")
-              val res = arr.map(a => (d.subreddit, a))
+              val arr = d.body.trim.split(" ")
+              val res = arr.map(a => (d.subreddit, a.toLowerCase))
               res
             })
-            .filter(d => d._2 == term)
+            .filter(d => d._2 == lowerCaseTerm)
             .map(d => (d._1, 1)).rdd
             .reduceByKey(_ + _).toDS
             .map(x => SubredditTotal(subreddit = x._1, total = x._2))
